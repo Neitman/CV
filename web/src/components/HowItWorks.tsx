@@ -11,49 +11,61 @@ export function HowItWorks({ model }: { model: ModelState }) {
   const steps = [
     {
       icon: ScanLine,
-      title: 'Landmarks',
+      title: 'Bước 1 & 2: Bắt khung xương',
+      badge: 'Đã hoàn thành',
+      badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
       body: lips
-        ? 'MediaPipe Holistic finds 543 body, face and hand points in each camera frame, in a Web Worker.'
-        : 'MediaPipe’s hand and pose landmarkers find the hands and upper body in each frame, in a Web Worker.',
+        ? 'MediaPipe Holistic trích xuất 543 điểm mốc (bàn tay, thân trên và môi) theo thời gian thực trong Web Worker.'
+        : 'MediaPipe nhận diện 2 bàn tay và tư thế thân trên trong Web Worker.',
     },
     {
       icon: Boxes,
-      title: 'Features',
-      body: `Hands, shoulders and arms${lips ? ', and 40 lip points' : ''} are centred on the shoulders, scaled by their width and mirrored so the signing hand always looks like a right hand. Frames are resampled to ${meta?.fps ?? 30} fps.`,
+      title: 'Bước 3: Phân đoạn cử chỉ',
+      badge: 'Trọng tâm báo cáo',
+      badgeColor: 'bg-accent-soft text-accent border-accent/30',
+      body: 'Thuật toán Segmenter theo dõi vận tốc hai bàn tay, tự động bắt đầu ghi chuỗi và chốt phân đoạn khi tay dừng yên ≥ 300ms hoặc hạ xuống.',
     },
     {
       icon: BrainCircuit,
-      title: 'Model',
-      body: `A 1.4 M-parameter convolution + transformer reads up to ${meta?.maxFrames ?? 64} frames. It runs with ONNX Runtime in WebAssembly, in a second worker.`,
+      title: 'Bước 4: Chuẩn hoá đặc trưng',
+      badge: 'Giai đoạn kế tiếp',
+      badgeColor: 'bg-surface-muted text-ink-muted border-line',
+      body: 'Chuẩn hoá toạ độ tâm vai, khử méo webcam ngang-dọc và đồng nhất tay thuận thành vector đặc trưng 460 chiều.',
     },
     {
       icon: Gauge,
-      title: 'Honest answers',
-      body: 'Below a confidence threshold calibrated on people the model never saw, the page says “Not sure” instead of guessing.',
+      title: 'Bước 5 & 6: Nhận diện mô hình',
+      badge: 'Giai đoạn kế tiếp',
+      badgeColor: 'bg-surface-muted text-ink-muted border-line',
+      body: 'Mô hình Conv-Transformer (ONNX) dự đoán 250 từ ASL với cơ chế lọc tin cậy (ngưỡng 0.29).',
     },
   ];
 
   return (
     <section id="how-it-works" aria-labelledby="how-heading" className="mt-16 scroll-mt-6">
       <h2 id="how-heading" className="text-2xl font-semibold tracking-tight">
-        How it works
+        Lộ trình Pipeline & Tiến độ phát triển
       </h2>
       <p className="mt-2 max-w-2xl text-ink-muted">
-        Signs are read from body landmarks rather than pixels, so lighting, background and camera
-        quality matter far less, and the model is small enough to run on your device.
+        Hệ thống được thiết kế theo kiến trúc chia tầng. Hiện tại dự án đã hoàn thiện trọn vẹn đến <strong>Bước 3 (Phân đoạn cử chỉ tay)</strong>.
       </p>
       <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((step, i) => (
           <li key={step.title}>
-            <Card className="h-full p-5">
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-lg bg-accent-soft text-accent">
-                  <step.icon aria-hidden className="size-5" />
-                </span>
-                <span className="text-xs font-medium text-ink-muted">Step {i + 1}</span>
+            <Card className="h-full p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="grid size-9 place-items-center rounded-lg bg-accent-soft text-accent">
+                    <step.icon aria-hidden className="size-5" />
+                  </span>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${step.badgeColor}`}>
+                    {step.badge}
+                  </span>
+                </div>
+                <div className="text-xs font-medium text-ink-muted mt-2">Giai đoạn {i + 1}</div>
+                <h3 className="mt-1 font-semibold">{step.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-ink-muted">{step.body}</p>
               </div>
-              <h3 className="mt-3 font-semibold">{step.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-ink-muted">{step.body}</p>
             </Card>
           </li>
         ))}

@@ -11,7 +11,7 @@ import {
   type CameraProblem,
 } from '../lib/camera';
 import { emptyFrame, type Frame } from '../ml/landmarks';
-import { loadMeta, ModelClient, type LoadedModel } from '../ml/model-client';
+import { loadMeta, type LoadedModel /* , ModelClient */ } from '../ml/model-client';
 import { Recognizer, type RecognitionResult, type RecognizerEvent } from '../ml/recognizer';
 import type { FrameStatus } from '../ml/segmenter';
 import { TrackerClient } from '../ml/tracker-client';
@@ -143,11 +143,16 @@ export class Session {
     return this.tracker;
   }
 
-  // --- model ----------------------------------------------------------------
+  // --- model (ĐÃ DOWNGRADE XUỐNG BƯỚC 3: PHÂN ĐOẠN CỬ CHỈ) ----------------------
   async loadModel(): Promise<void> {
     if (this.snapshot.model.status === 'ready') return;
     this.set({ model: { status: 'loading' } });
     try {
+      /* =========================================================================
+       * [BÁO CÁO TIẾN ĐỘ - BƯỚC 5: TẠM THỜI COMMENT NẠP MÔ HÌNH HỌC SÂU ONNX]
+       * Để báo cáo tiến độ Bước 3 (Phân đoạn cử chỉ), không cần nạp mô hình model.onnx (5.6MB)
+       * hay khởi chạy ONNX Runtime WebAssembly worker.
+       * =========================================================================
       const model = await ModelClient.load();
       this.recognizer = new Recognizer(
         model.meta,
@@ -158,6 +163,29 @@ export class Session {
         },
       );
       this.set({ model: { status: 'ready', model } });
+      mark('model-ready');
+      ========================================================================= */
+
+      // Chỉ nạp cấu hình metadata (để MediaPipe biết cấu hình landmarks cần bắt)
+      const meta = await loadMeta();
+      this.recognizer = new Recognizer(
+        meta,
+        [],
+        async () => ({ logits: new Float32Array(), embedding: new Float32Array() }),
+        (event) => {
+          this.onRecognizer(event);
+        },
+      );
+      this.set({
+        model: {
+          status: 'ready',
+          model: {
+            meta,
+            labels: [],
+            client: null as any,
+          },
+        },
+      });
       mark('model-ready');
     } catch (error) {
       this.set({

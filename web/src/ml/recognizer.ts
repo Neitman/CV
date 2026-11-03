@@ -4,8 +4,11 @@
  * decision. Inference is injected so the logic is unit-testable without
  * workers or WASM.
  */
-import { decide, type Decision } from './decision';
-import { modelInput, type ModelInput } from './features';
+// [BÁO CÁO TIẾN ĐỘ] Tạm thời comment các module của Bước 4, 5, 6
+// import { decide, type Decision } from './decision';
+import type { Decision } from './decision';
+// import { modelInput, type ModelInput } from './features';
+import type { ModelInput } from './features';
 import type { Frame } from './landmarks';
 import type { ModelMeta, SignLabel } from './meta';
 import { Segmenter, frameStatus, type FrameStatus, type Segment } from './segmenter';
@@ -47,11 +50,14 @@ export class Recognizer {
   private generation = 0;
 
   constructor(
-    private readonly meta: ModelMeta,
+    _meta: ModelMeta,
     private readonly labels: readonly SignLabel[],
-    private readonly infer: Infer,
+    _infer: Infer,
     private readonly emit: (event: RecognizerEvent) => void,
-  ) {}
+  ) {
+    void _meta;
+    void _infer;
+  }
 
   get shipped(): boolean[] {
     return this.labels.map((l) => l.shipped);
@@ -102,6 +108,13 @@ export class Recognizer {
   }
 
   private async classify(segment: Segment, partial: boolean, generation: number): Promise<void> {
+    /* =========================================================================
+     * [BÁO CÁO TIẾN ĐỘ - DOWNGRADE XUỐNG BƯỚC 3: PHÂN ĐOẠN CỬ CHỈ TAY]
+     * Các bước sau tạm thời được comment để phục vụ báo cáo tiến độ phân đoạn:
+     * - BƯỚC 4: Trích xuất đặc trưng vector 460 chiều (modelInput trong features.ts)
+     * - BƯỚC 5: Suy luận mô hình học sâu Conv-Transformer qua ONNX Runtime (this.infer)
+     * - BƯỚC 6: Tính toán xác suất Softmax và lọc nhãn Top-3 (decide trong decision.ts)
+     * =========================================================================
     const input = modelInput(segment.frames, segment.fps, this.meta);
     if (input.frames < this.meta.minFrames) {
       this.emit({ type: 'discarded' });
@@ -115,5 +128,19 @@ export class Recognizer {
     } catch (error) {
       this.emit({ type: 'error', message: error instanceof Error ? error.message : String(error) });
     }
+    ========================================================================= */
+
+    // [BƯỚC 3] Phát tín hiệu kết quả phân đoạn cử chỉ (Segment Complete)
+    if (generation !== this.generation) return;
+    this.emit({
+      type: 'result',
+      result: {
+        segment,
+        partial,
+        // Dữ liệu mô hình ở các bước sau được để trống (mock/stub cho bước 3)
+        decision: { kind: 'sign', top: [] },
+        inference: { logits: new Float32Array(), embedding: new Float32Array() },
+      },
+    });
   }
 }
